@@ -1,0 +1,55 @@
+{
+  "name": "paramzilla",
+  "version": "1.0.0",
+  "description": "Comprehensive URL parameter tracking library with multi-storage fallback, link decoration, and SPA support",
+  "type": "module",
+  "main": "dist/paramzilla.js",
+  "module": "dist/paramzilla.esm.js",
+  "types": "dist/paramzilla.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "rollup -c",
+    "build:watch": "rollup -c -w",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --ext .ts",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "url",
+    "parameters",
+    "utm",
+    "tracking",
+    "attribution",
+    "marketing",
+    "analytics",
+    "cookies",
+    "localStorage",
+    "spa"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@rollup/plugin-typescript": "^11.1.6",
+    "@types/node": "^20.11.0",
+    "jsdom": "^24.0.0",
+    "rollup": "^4.9.6",
+    "rollup-plugin-dts": "^6.1.0",
+    "@rollup/plugin-terser": "^0.4.4",
+    "tslib": "^2.6.2",
+    "typescript": "^5.3.3",
+    "vitest": "^1.2.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/paramzilla.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/paramzilla/issues"
+  },
+  "homepage": "https://github.com/yourusername/paramzilla#readme"
+}

@@ -1,0 +1,136 @@
+import { ParamzillaConfig } from './types';
+import { parseUrl, matchDomain, matchesAnyPattern } from './utils';
+
+export class LinkDecorator {
+  private config: ParamzillaConfig;
+  private decorated: WeakSet<HTMLAnchorElement> = new WeakSet();
+
+  constructor(config: ParamzillaConfig) {
+    this.config = config;
+  }
+
+  private log(msg: string, ...args: unknown[]): void {
+    if (this.config.debug) console.log(`[Paramzilla:Decorator] ${msg}`, ...args);
+  }
+
+  /**
+   * Decorate all links on page
+   * @returns Number of links decorated
+   */
+  decorateAll(params: Record<string, string>): number {
+    if (!this.config.enableLinkDecoration) return 0;
+    if (Object.keys(params).length === 0) return 0;
+
+    const links = document.querySelectorAll<HTMLAnchorElement>('a[href]');
+    let count = 0;
+
+    links.forEach((link) => {
+      if (this.decorateLink(link, params)) count++;
+    });
+
+    this.log(`Decorated ${count} links`);
+    return count;
+  }
+
+  /**
+   * Decorate a single link
+   */
+  decorateLink(link: HTMLAnchorElement, params: Record<string, string>): boolean {
+    // Skip if already processed
+    if (this.decorated.has(link)) return false;
+
+    const href = link.getAttribute('href');
+    if (!href) return false;
+
+    // Skip special protocols (non-http links that shouldn't have params appended)
+    if (/^(mailto:|tel:|javascript:|data:|blob:|file:|ftp:|sms:|whatsapp:|skype:|facetime:|#)/.test(href)) {
+      return false;
+    }
+
+    // Check exclusion selector
+    if (this.config.excludeSelector && link.matches(this.config.excludeSelector)) {
+      this.log('Link excluded by selector:', href);
+      return false;
+    }
+
+    // Check exclusion patterns
+    if (matchesAnyPattern(href, this.config.excludePatterns)) {
+      this.log('Link excluded by pattern:', href);
+      return false;
+    }
+
+    // Parse URL
+    const url = parseUrl(href);
+    if (!url) return false;
+
+    // Check domain allowlist
+    if (!this.isDomainAllowed(url.hostname)) {
+      this.log('Domain not allowed:', url.hostname);
+      return false;
+    }
+
+    // Add params to URL
+    const newHref = this.addParamsToUrl(url, params);
+
+    if (newHref !== href) {
+      link.setAttribute('href', newHref);
+      this.decorated.add(link);
+      this.log('Decorated:', href, '->', newHref);
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Check if domain is in allowlist
+   */
+  private isDomainAllowed(hostname: string): boolean {
+    const patterns = this.config.allowedDomains;
+
+    // If no patterns, allow only current domain
+    if (patterns.length === 0) {
+      return hostname === window.location.hostname;
+    }
+
+    return patterns.some((p) => matchDomain(p, hostname));
+  }
+
+  /**
+   * Add params to URL respecting existingParamBehavior
+   */
+  private addParamsToUrl(url: URL, params: Record<string, string>): string {
+    const behavior = this.config.existingParamBehavior;
+
+    Object.entries(params).forEach(([key, value]) => {
+      const existing = url.searchParams.get(key);
+
+      if (behavior === 'overwrite') {
+        url.searchParams.set(key, value);
+      } else if (behavior === 'fill') {
+        // Fill if doesn't exist OR exists but empty
+        if (existing === null || existing === '') {
+          url.searchParams.set(key, value);
+        }
+      } else {
+        // 'skip' - only add if doesn't exist at all
+        if (existing === null) {
+          url.searchParams.set(key, value);
+        }
+      }
+    });
+
+    return url.toString();
+  }
+
+  /**
+   * Reset decorated links tracking
+   */
+  reset(): void {
+    this.decorated = new WeakSet();
+  }
+
+  updateConfig(config: ParamzillaConfig): void {
+    this.config = config;
+  }
+}
