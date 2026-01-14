@@ -16,11 +16,6 @@ export class ParamCapture {
    * Check if a param name should be captured
    */
   shouldCapture(name: string): boolean {
-    // Check exclusions first
-    if (this.config.excludeParams.includes(name)) {
-      return false;
-    }
-
     // Check exact match
     if (this.config.params.includes(name)) {
       return true;

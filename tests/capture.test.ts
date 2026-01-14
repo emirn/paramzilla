@@ -42,15 +42,14 @@ describe('ParamCapture', () => {
       expect(capture.shouldCapture('other_param')).toBe(false);
     });
 
-    it('excludes params in excludeParams', () => {
+    it('captures both exact and prefix matches', () => {
       config.params = ['ref'];
       config.paramPrefixes = ['utm_'];
-      config.excludeParams = ['utm_id', 'ref'];
       const capture = new ParamCapture(config);
 
+      expect(capture.shouldCapture('ref')).toBe(true);
       expect(capture.shouldCapture('utm_source')).toBe(true);
-      expect(capture.shouldCapture('utm_id')).toBe(false);
-      expect(capture.shouldCapture('ref')).toBe(false);
+      expect(capture.shouldCapture('other')).toBe(false);
     });
   });
 

@@ -5,10 +5,7 @@ import { ParamCapture } from './capture';
 import { LinkDecorator } from './decorator';
 import { DynamicObserver } from './observer';
 
-const STORAGE_KEYS = {
-  FIRST: 'first',
-  LAST: 'last',
-};
+const STORAGE_KEY = 'params';
 
 class Paramzilla implements ParamzillaAPI {
   private config: ParamzillaConfig = { ...DEFAULT_CONFIG };
@@ -16,7 +13,6 @@ class Paramzilla implements ParamzillaAPI {
   private paramCapture: ParamCapture | null = null;
   private decorator: LinkDecorator | null = null;
   private observer: DynamicObserver | null = null;
-  private initialized = false;
 
   private log(msg: string, ...args: unknown[]): void {
     if (this.config.debug) console.log(`[Paramzilla] ${msg}`, ...args);
@@ -44,7 +40,6 @@ class Paramzilla implements ParamzillaAPI {
       // Start dynamic observation
       this.observer.start();
 
-      this.initialized = true;
       this.log('Initialized');
     } catch (e) {
       this.log('Error in init:', e);
@@ -62,80 +57,80 @@ class Paramzilla implements ParamzillaAPI {
   private captureInternal(): ParamData | null {
     if (!this.paramCapture || !this.storage) return null;
 
-    const data = this.paramCapture.capture();
-    if (!data) return null;
+    const newData = this.paramCapture.capture();
+    if (!newData) return null;
 
-    let isFirstTouch = false;
+    const existing = this.storage.get(STORAGE_KEY);
+    let isFirstTouch = !existing;
+    let finalData: ParamData;
 
-    // Store first touch (only if not exists)
-    const existing = this.storage.get(STORAGE_KEYS.FIRST);
     if (!existing) {
-      this.storage.set(STORAGE_KEYS.FIRST, data, this.config.ttl);
-      isFirstTouch = true;
+      // First visit - store new params
+      finalData = newData;
+    } else if (this.config.mergeParams) {
+      // Merge mode - append unique values
+      finalData = {
+        params: this.mergeParamValues(existing.params, newData.params),
+        timestamp: existing.timestamp, // Keep original timestamp
+      };
+    } else {
+      // Pure first-touch - ignore new params
+      this.log('First-touch mode: keeping original params');
+      return null;
     }
 
-    // Store last touch (always update)
-    this.storage.set(STORAGE_KEYS.LAST, data, this.config.ttl);
+    this.storage.set(STORAGE_KEY, finalData, this.config.ttl);
 
     // Call onCapture callback
-    this.config.onCapture?.(data.params, isFirstTouch);
+    this.config.onCapture?.(finalData.params, isFirstTouch);
 
-    return data;
+    return finalData;
+  }
+
+  /**
+   * Merge new param values into existing, maintaining unique values in original order
+   * Example: existing="google|facebook", new="medium" -> "google|facebook|medium"
+   */
+  private mergeParamValues(
+    existing: Record<string, string>,
+    newParams: Record<string, string>
+  ): Record<string, string> {
+    const result = { ...existing };
+
+    for (const [key, newValue] of Object.entries(newParams)) {
+      const existingValue = result[key];
+      if (!existingValue) {
+        result[key] = newValue;
+      } else {
+        // Split existing into array, add new value if not present
+        const values = existingValue.split('|');
+        if (!values.includes(newValue)) {
+          values.push(newValue);
+          result[key] = values.join('|');
+        }
+      }
+    }
+
+    return result;
   }
 
   // ═══════════════════════════════════════════════════════════════
   // PUBLIC API
   // ═══════════════════════════════════════════════════════════════
 
-  getConfig(): ParamzillaConfig {
-    return { ...this.config };
-  }
-
-  getFirstTouch(): ParamData | null {
-    return this.storage?.get(STORAGE_KEYS.FIRST) ?? null;
-  }
-
-  getLastTouch(): ParamData | null {
-    return this.storage?.get(STORAGE_KEYS.LAST) ?? null;
-  }
-
   getParams(): Record<string, string> {
-    const last = this.getLastTouch();
-    if (last) return last.params;
-
-    const first = this.getFirstTouch();
-    if (first) return first.params;
-
-    return {};
+    const data = this.storage?.get(STORAGE_KEY);
+    return data?.params ?? {};
   }
 
   getParam(name: string): string | null {
     return this.getParams()[name] ?? null;
   }
 
-  capture(): Record<string, string> | null {
-    const data = this.captureInternal();
-    return data?.params ?? null;
-  }
-
-  decorateLinks(): number {
-    return this.decorator?.decorateAll(this.getParams()) ?? 0;
-  }
-
   clear(): void {
     this.storage?.clearAll();
     this.decorator?.reset();
     this.log('Cleared all data');
-  }
-
-  isActive(): boolean {
-    return this.initialized;
-  }
-
-  destroy(): void {
-    this.observer?.stop();
-    this.initialized = false;
-    this.log('Destroyed');
   }
 }
 
@@ -164,6 +159,11 @@ if (typeof document !== 'undefined') {
       // Boolean: debug
       if (script.dataset.debug === 'true') {
         config.debug = true;
+      }
+
+      // Boolean: mergeParams
+      if (script.dataset.mergeParams === 'true') {
+        config.mergeParams = true;
       }
 
       // String: storage

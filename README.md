@@ -26,6 +26,7 @@ Configure using data attributes:
   data-params="ref,gclid,fbclid"
   data-prefixes="utm_,pk_"
   data-storage="localStorage"
+  data-merge-params="true"
   data-debug="true"
 ></script>
 ```
@@ -38,6 +39,7 @@ Configure using data attributes:
 | data-params | Exact parameter names to capture | "ref,gclid,fbclid" |
 | data-prefixes | Parameter prefixes to capture | "utm_,pk_" |
 | data-storage | Storage backend | "localStorage" |
+| data-merge-params | Enable attribution journey tracking | "true" |
 | data-allowed-domains | Domains for link decoration | "example.com,*.example.com" |
 | data-exclude-patterns | URL patterns to skip | "*.pdf,*logout*" |
 | data-debug | Enable console logging | "true" |
@@ -60,20 +62,8 @@ Paramzilla.getParams()
 Paramzilla.getParam("utm_source")
 // Returns: "google" or null
 
-// Get first-touch data (first visit)
-Paramzilla.getFirstTouch()
-// Returns: { params: {...}, timestamp: 1234567890 }
-
-// Get last-touch data (most recent visit)
-Paramzilla.getLastTouch()
-// Returns: { params: {...}, timestamp: 1234567890 }
-
 // Clear all stored data
 Paramzilla.clear()
-
-// Check if active
-Paramzilla.isActive()
-// Returns: true or false
 ```
 
 ## Manual Initialization
@@ -83,6 +73,7 @@ Paramzilla.init({
   params: ["ref", "gclid"],
   paramPrefixes: ["utm_"],
   storage: "localStorage",
+  mergeParams: true,
   debug: true
 });
 ```
@@ -94,12 +85,40 @@ Paramzilla.init({
 | debug | boolean | false | Log to console |
 | params | string[] | [] | Exact parameter names to capture |
 | paramPrefixes | string[] | ["utm_"] | Parameter prefixes to capture |
-| excludeParams | string[] | [] | Parameters to ignore |
 | storage | string | "localStorage" | Storage backend |
 | ttl | number | 30 | Data expiry in days |
+| mergeParams | boolean | false | Enable attribution journey tracking |
 | allowedDomains | string[] | [] | Domains for link decoration (empty = current domain) |
 | excludePatterns | string[] | (see below) | URL patterns to skip |
 | cookieDomain | string | "" | Cookie domain for cross-subdomain (when using cookies) |
+| onCapture | function | undefined | Callback when params are captured |
+
+## Attribution Modes
+
+### First-Touch (default)
+
+With `mergeParams: false` (default), Paramzilla uses pure first-touch attribution:
+
+```
+Visit 1: ?utm_source=google    → stored: "google"
+Visit 2: ?utm_source=facebook  → stored: "google" (unchanged)
+Visit 3: ?utm_source=medium    → stored: "google" (unchanged)
+```
+
+The original attribution is preserved forever.
+
+### Attribution Journey
+
+With `mergeParams: true`, Paramzilla tracks the full attribution journey:
+
+```
+Visit 1: ?utm_source=google    → stored: "google"
+Visit 2: ?utm_source=facebook  → stored: "google|facebook"
+Visit 3: ?utm_source=medium    → stored: "google|facebook|medium"
+Visit 4: ?utm_source=medium    → stored: "google|facebook|medium" (no duplicates)
+```
+
+Values are unique and maintain their original order.
 
 ### Default Exclude Patterns
 

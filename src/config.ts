@@ -6,7 +6,6 @@ export const DEFAULT_CONFIG: ParamzillaConfig = {
   // Parameters - captures all utm_* by default
   params: [],
   paramPrefixes: ['utm_'],
-  excludeParams: [],
 
   // Storage - localStorage only (GDPR-compliant)
   storage: 'localStorage',
@@ -32,6 +31,9 @@ export const DEFAULT_CONFIG: ParamzillaConfig = {
     '*signout*',
     '*unsubscribe*',
   ],
+
+  // Attribution - pure first-touch by default
+  mergeParams: false,
 
   onCapture: undefined,
 };
