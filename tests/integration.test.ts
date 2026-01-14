@@ -51,8 +51,7 @@ describe('Paramzilla Integration', () => {
 
     it('initializes with custom config', () => {
       instance.init({
-        params: ['ref', 'source'],
-        paramPrefixes: ['utm_', 'pk_'],
+        params: ['ref', 'source', 'utm_', 'pk_'],
         storage: 'localStorage',
       });
 

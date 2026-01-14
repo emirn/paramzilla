@@ -137,13 +137,13 @@ class Paramzilla implements ParamzillaAPI {
 // Singleton instance
 const paramzilla = new Paramzilla();
 
-// Auto-init from script tag attributes
+// Auto-init from script tag attributes (always runs)
 if (typeof document !== 'undefined') {
   const autoInit = () => {
     const script = document.currentScript as HTMLScriptElement | null;
-    if (script?.hasAttribute('data-auto-init')) {
-      let config: Partial<ParamzillaConfig> = {};
+    let config: Partial<ParamzillaConfig> = {};
 
+    if (script) {
       // 1. Parse JSON config first (lowest priority)
       const configAttr = script.getAttribute('data-config');
       if (configAttr) {
@@ -171,17 +171,9 @@ if (typeof document !== 'undefined') {
         config.storage = script.dataset.storage;
       }
 
-      // Array: params (comma-separated exact param names)
+      // Array: params (comma-separated, uses startsWith matching)
       if (script.dataset.params) {
         config.params = script.dataset.params
-          .split(',')
-          .map((s) => s.trim())
-          .filter((s) => s.length > 0);
-      }
-
-      // Array: prefixes (comma-separated param prefixes)
-      if (script.dataset.prefixes) {
-        config.paramPrefixes = script.dataset.prefixes
           .split(',')
           .map((s) => s.trim())
           .filter((s) => s.length > 0);
@@ -202,9 +194,9 @@ if (typeof document !== 'undefined') {
           .map((s) => s.trim())
           .filter((s) => s.length > 0);
       }
-
-      paramzilla.init(config);
     }
+
+    paramzilla.init(config);
   };
 
   if (document.readyState === 'loading') {

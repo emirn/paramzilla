@@ -3,9 +3,8 @@ import { ParamzillaConfig } from './types';
 export const DEFAULT_CONFIG: ParamzillaConfig = {
   debug: false,
 
-  // Parameters - captures all utm_* by default
-  params: [],
-  paramPrefixes: ['utm_'],
+  // Parameters - captures all utm_* by default (startsWith matching)
+  params: ['utm_'],
 
   // Storage - localStorage only (GDPR-compliant)
   storage: 'localStorage',

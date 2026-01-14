@@ -13,16 +13,10 @@ export class ParamCapture {
   }
 
   /**
-   * Check if a param name should be captured
+   * Check if a param name should be captured (startsWith matching)
    */
   shouldCapture(name: string): boolean {
-    // Check exact match
-    if (this.config.params.includes(name)) {
-      return true;
-    }
-
-    // Check prefixes
-    return this.config.paramPrefixes.some((prefix) => name.startsWith(prefix));
+    return this.config.params.some((pattern) => name.startsWith(pattern));
   }
 
   /**

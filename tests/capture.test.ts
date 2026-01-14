@@ -20,20 +20,9 @@ describe('ParamCapture', () => {
     });
   });
 
-  describe('shouldCapture', () => {
-    it('captures exact param names', () => {
-      config.params = ['ref', 'source'];
-      config.paramPrefixes = [];
-      const capture = new ParamCapture(config);
-
-      expect(capture.shouldCapture('ref')).toBe(true);
-      expect(capture.shouldCapture('source')).toBe(true);
-      expect(capture.shouldCapture('other')).toBe(false);
-    });
-
-    it('captures params by prefix', () => {
-      config.params = [];
-      config.paramPrefixes = ['utm_', 'pk_'];
+  describe('shouldCapture (startsWith matching)', () => {
+    it('captures params matching patterns', () => {
+      config.params = ['utm_', 'pk_'];
       const capture = new ParamCapture(config);
 
       expect(capture.shouldCapture('utm_source')).toBe(true);
@@ -42,13 +31,22 @@ describe('ParamCapture', () => {
       expect(capture.shouldCapture('other_param')).toBe(false);
     });
 
-    it('captures both exact and prefix matches', () => {
-      config.params = ['ref'];
-      config.paramPrefixes = ['utm_'];
+    it('captures exact matches via startsWith', () => {
+      config.params = ['gclid', 'fbclid'];
       const capture = new ParamCapture(config);
 
-      expect(capture.shouldCapture('ref')).toBe(true);
+      expect(capture.shouldCapture('gclid')).toBe(true);
+      expect(capture.shouldCapture('fbclid')).toBe(true);
+      expect(capture.shouldCapture('other')).toBe(false);
+    });
+
+    it('captures mixed prefixes and exact names', () => {
+      config.params = ['utm_', 'gclid'];
+      const capture = new ParamCapture(config);
+
       expect(capture.shouldCapture('utm_source')).toBe(true);
+      expect(capture.shouldCapture('utm_medium')).toBe(true);
+      expect(capture.shouldCapture('gclid')).toBe(true);
       expect(capture.shouldCapture('other')).toBe(false);
     });
   });
@@ -57,16 +55,15 @@ describe('ParamCapture', () => {
     it('captures params from URL', () => {
       Object.defineProperty(window, 'location', {
         value: {
-          search: '?utm_source=google&utm_medium=cpc&ref=affiliate',
-          href: 'http://localhost/?utm_source=google&utm_medium=cpc&ref=affiliate',
+          search: '?utm_source=google&utm_medium=cpc&gclid=abc123',
+          href: 'http://localhost/?utm_source=google&utm_medium=cpc&gclid=abc123',
           origin: 'http://localhost',
           hostname: 'localhost',
         },
         writable: true,
       });
 
-      config.params = ['ref'];
-      config.paramPrefixes = ['utm_'];
+      config.params = ['utm_', 'gclid'];
       const capture = new ParamCapture(config);
 
       const result = capture.capture();
@@ -75,7 +72,7 @@ describe('ParamCapture', () => {
       expect(result!.params).toEqual({
         utm_source: 'google',
         utm_medium: 'cpc',
-        ref: 'affiliate',
+        gclid: 'abc123',
       });
       expect(result!.timestamp).toBeLessThanOrEqual(Date.now());
     });
@@ -91,8 +88,7 @@ describe('ParamCapture', () => {
         writable: true,
       });
 
-      config.params = [];
-      config.paramPrefixes = ['utm_'];
+      config.params = ['utm_'];
       const capture = new ParamCapture(config);
 
       expect(capture.capture()).toBeNull();
@@ -109,7 +105,7 @@ describe('ParamCapture', () => {
         writable: true,
       });
 
-      config.paramPrefixes = ['utm_'];
+      config.params = ['utm_'];
       const capture = new ParamCapture(config);
 
       const result = capture.capture();
@@ -134,7 +130,7 @@ describe('ParamCapture', () => {
         writable: true,
       });
 
-      config.paramPrefixes = ['utm_'];
+      config.params = ['utm_'];
       const capture = new ParamCapture(config);
 
       expect(capture.hasParams()).toBe(true);
@@ -151,7 +147,7 @@ describe('ParamCapture', () => {
         writable: true,
       });
 
-      config.paramPrefixes = ['utm_'];
+      config.params = ['utm_'];
       const capture = new ParamCapture(config);
 
       expect(capture.hasParams()).toBe(false);

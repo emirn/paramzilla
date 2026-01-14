@@ -23,16 +23,11 @@ export interface ParamzillaConfig {
   debug: boolean;
 
   /**
-   * Exact parameter names to capture
-   * @example ['utm_source', 'utm_medium', 'ref', 'source', 'gclid']
+   * Parameters to capture (uses startsWith matching)
+   * @example ['utm_'] - captures utm_source, utm_medium, utm_campaign, etc.
+   * @example ['utm_', 'gclid', 'fbclid'] - captures all utm_* plus gclid and fbclid
    */
   params: string[];
-
-  /**
-   * Parameter prefixes - captures any param starting with these
-   * @example ['utm_', 'pk_', 'mtm_'] - captures utm_source, utm_custom, pk_campaign, etc.
-   */
-  paramPrefixes: string[];
 
   /**
    * Storage backend(s) with fallback support
