@@ -67,11 +67,6 @@ describe('Paramzilla Integration', () => {
       expect(config.paramPrefixes).toContain('pk_');
     });
 
-    it('respects enabled: false', () => {
-      instance.init({ enabled: false });
-      expect(instance.isActive()).toBe(false);
-    });
-
     it('calls onCapture callback when params captured', () => {
       Object.defineProperty(window, 'location', {
         value: {
@@ -254,13 +249,9 @@ describe('Paramzilla Integration', () => {
         configurable: true,
       });
 
-      instance.init({ enableLinkDecoration: false }); // Disable auto-decoration
+      instance.init();
 
-      // Manually decorate
-      instance.configure({ enableLinkDecoration: true });
-      const count = instance.decorateLinks();
-
-      expect(count).toBe(1);
+      // Links are already decorated on init, so verify
       expect(document.querySelector('a')!.href).toContain('utm_source=google');
     });
   });
@@ -286,21 +277,6 @@ describe('Paramzilla Integration', () => {
       expect(instance.getFirstTouch()).toBeNull();
       expect(instance.getLastTouch()).toBeNull();
       expect(instance.getParams()).toEqual({});
-    });
-  });
-
-  describe('configure', () => {
-    it('updates config at runtime', () => {
-      instance.init({ params: ['ref'] });
-
-      const config1 = instance.getConfig();
-      expect(config1.params).toContain('ref');
-      expect(config1.params).not.toContain('source');
-
-      instance.configure({ params: ['ref', 'source'] });
-
-      const config2 = instance.getConfig();
-      expect(config2.params).toContain('source');
     });
   });
 
@@ -340,46 +316,6 @@ describe('Paramzilla Integration', () => {
 
       // Data should still be accessible (via sessionStorage fallback)
       // Note: This depends on implementation - may or may not work depending on how error is handled
-    });
-  });
-
-  describe('first touch only mode', () => {
-    it('only stores first touch when last touch disabled', () => {
-      Object.defineProperty(window, 'location', {
-        value: {
-          search: '?utm_source=google',
-          href: 'https://example.com/?utm_source=google',
-          origin: 'https://example.com',
-          hostname: 'example.com',
-        },
-        writable: true,
-        configurable: true,
-      });
-
-      instance.init({ enableLastTouch: false });
-
-      expect(instance.getFirstTouch()).not.toBeNull();
-      expect(instance.getLastTouch()).toBeNull();
-    });
-  });
-
-  describe('last touch only mode', () => {
-    it('only stores last touch when first touch disabled', () => {
-      Object.defineProperty(window, 'location', {
-        value: {
-          search: '?utm_source=google',
-          href: 'https://example.com/?utm_source=google',
-          origin: 'https://example.com',
-          hostname: 'example.com',
-        },
-        writable: true,
-        configurable: true,
-      });
-
-      instance.init({ enableFirstTouch: false });
-
-      expect(instance.getFirstTouch()).toBeNull();
-      expect(instance.getLastTouch()).not.toBeNull();
     });
   });
 });

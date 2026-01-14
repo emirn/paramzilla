@@ -56,13 +56,11 @@ describe('LinkDecorator', () => {
       });
     });
 
-    it('skips links matching exclude selector', () => {
-      config.excludeSelector = '.no-track, [data-pz-ignore]';
-      decorator = new LinkDecorator(config);
-
+    it('skips links matching exclude selector (hardcoded)', () => {
+      // Uses hardcoded EXCLUDE_SELECTOR: '[data-pz-ignore], .pz-ignore'
       const link1 = document.createElement('a');
       link1.href = 'https://example.com/page';
-      link1.className = 'no-track';
+      link1.className = 'pz-ignore';
       document.body.appendChild(link1);
 
       const link2 = document.createElement('a');
@@ -129,10 +127,7 @@ describe('LinkDecorator', () => {
       });
     });
 
-    it('respects existingParamBehavior: skip', () => {
-      config.existingParamBehavior = 'skip';
-      decorator = new LinkDecorator(config);
-
+    it('skips existing params (always uses skip behavior)', () => {
       const link = document.createElement('a');
       link.href = 'https://example.com/page?utm_source=existing';
       document.body.appendChild(link);
@@ -141,34 +136,6 @@ describe('LinkDecorator', () => {
 
       expect(link.href).toContain('utm_source=existing');
       expect(link.href).toContain('utm_medium=test');
-    });
-
-    it('respects existingParamBehavior: fill', () => {
-      config.existingParamBehavior = 'fill';
-      decorator = new LinkDecorator(config);
-
-      const link = document.createElement('a');
-      link.href = 'https://example.com/page?utm_source=&utm_medium=existing';
-      document.body.appendChild(link);
-
-      decorator.decorateLink(link, { utm_source: 'filled', utm_medium: 'new' });
-
-      expect(link.href).toContain('utm_source=filled');
-      expect(link.href).toContain('utm_medium=existing');
-    });
-
-    it('respects existingParamBehavior: overwrite', () => {
-      config.existingParamBehavior = 'overwrite';
-      decorator = new LinkDecorator(config);
-
-      const link = document.createElement('a');
-      link.href = 'https://example.com/page?utm_source=old';
-      document.body.appendChild(link);
-
-      decorator.decorateLink(link, { utm_source: 'new' });
-
-      expect(link.href).toContain('utm_source=new');
-      expect(link.href).not.toContain('utm_source=old');
     });
 
     it('does not decorate same link twice', () => {
@@ -200,16 +167,6 @@ describe('LinkDecorator', () => {
       document.querySelectorAll('a').forEach((link) => {
         expect(link.href).toContain('utm_source=test');
       });
-    });
-
-    it('returns 0 when link decoration is disabled', () => {
-      config.enableLinkDecoration = false;
-      decorator = new LinkDecorator(config);
-
-      document.body.innerHTML = `<a href="https://example.com/page">Link</a>`;
-
-      const count = decorator.decorateAll({ utm_source: 'test' });
-      expect(count).toBe(0);
     });
 
     it('returns 0 when no params provided', () => {

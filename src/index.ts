@@ -1,10 +1,9 @@
 import { ParamzillaConfig, ParamzillaAPI, ParamData } from './types';
-import { DEFAULT_CONFIG } from './config';
+import { DEFAULT_CONFIG, STORAGE_PREFIX } from './config';
 import { Storage } from './storage';
 import { ParamCapture } from './capture';
 import { LinkDecorator } from './decorator';
 import { DynamicObserver } from './observer';
-import { URLRestorer } from './restorer';
 
 const STORAGE_KEYS = {
   FIRST: 'first',
@@ -17,16 +16,10 @@ class Paramzilla implements ParamzillaAPI {
   private paramCapture: ParamCapture | null = null;
   private decorator: LinkDecorator | null = null;
   private observer: DynamicObserver | null = null;
-  private restorer: URLRestorer | null = null;
   private initialized = false;
 
   private log(msg: string, ...args: unknown[]): void {
     if (this.config.debug) console.log(`[Paramzilla] ${msg}`, ...args);
-  }
-
-  private handleError(error: Error, context: string): void {
-    this.log(`Error in ${context}:`, error);
-    this.config.onError?.(error, context);
   }
 
   init(userConfig?: Partial<ParamzillaConfig>): void {
@@ -34,21 +27,15 @@ class Paramzilla implements ParamzillaAPI {
       this.config = { ...DEFAULT_CONFIG, ...userConfig };
       this.log('Initializing with config:', this.config);
 
-      if (!this.config.enabled) {
-        this.log('Disabled by config');
-        return;
-      }
-
       // Initialize components
       this.storage = new Storage(
         this.config.storage,
-        this.config.storagePrefix,
+        STORAGE_PREFIX,
         this.config.cookieDomain,
         this.config.debug
       );
       this.paramCapture = new ParamCapture(this.config);
       this.decorator = new LinkDecorator(this.config);
-      this.restorer = new URLRestorer(this.config, this.paramCapture);
       this.observer = new DynamicObserver(this.config, this.decorator, () => this.getParams());
 
       // Process current page
@@ -60,21 +47,15 @@ class Paramzilla implements ParamzillaAPI {
       this.initialized = true;
       this.log('Initialized');
     } catch (e) {
-      this.handleError(e as Error, 'init');
+      this.log('Error in init:', e);
     }
   }
 
   private processPage(): void {
-    // 1. Try to capture from URL
-    const captured = this.captureInternal();
+    // 1. Capture params from URL
+    this.captureInternal();
 
-    // 2. If no params captured, try to restore from storage
-    if (!captured && this.storage) {
-      const stored = this.storage.get(STORAGE_KEYS.LAST) || this.storage.get(STORAGE_KEYS.FIRST);
-      this.restorer?.restore(stored);
-    }
-
-    // 3. Decorate links
+    // 2. Decorate links with stored params
     this.decorator?.decorateAll(this.getParams());
   }
 
@@ -87,18 +68,14 @@ class Paramzilla implements ParamzillaAPI {
     let isFirstTouch = false;
 
     // Store first touch (only if not exists)
-    if (this.config.enableFirstTouch) {
-      const existing = this.storage.get(STORAGE_KEYS.FIRST);
-      if (!existing) {
-        this.storage.set(STORAGE_KEYS.FIRST, data, this.config.firstTouchTTL);
-        isFirstTouch = true;
-      }
+    const existing = this.storage.get(STORAGE_KEYS.FIRST);
+    if (!existing) {
+      this.storage.set(STORAGE_KEYS.FIRST, data, this.config.ttl);
+      isFirstTouch = true;
     }
 
     // Store last touch (always update)
-    if (this.config.enableLastTouch) {
-      this.storage.set(STORAGE_KEYS.LAST, data, this.config.lastTouchTTL);
-    }
+    this.storage.set(STORAGE_KEYS.LAST, data, this.config.ttl);
 
     // Call onCapture callback
     this.config.onCapture?.(data.params, isFirstTouch);
@@ -112,15 +89,6 @@ class Paramzilla implements ParamzillaAPI {
 
   getConfig(): ParamzillaConfig {
     return { ...this.config };
-  }
-
-  configure(config: Partial<ParamzillaConfig>): void {
-    this.config = { ...this.config, ...config };
-    this.paramCapture?.updateConfig(this.config);
-    this.decorator?.updateConfig(this.config);
-    this.restorer?.updateConfig(this.config);
-    this.observer?.updateConfig(this.config);
-    this.log('Config updated');
   }
 
   getFirstTouch(): ParamData | null {
@@ -154,11 +122,6 @@ class Paramzilla implements ParamzillaAPI {
     return this.decorator?.decorateAll(this.getParams()) ?? 0;
   }
 
-  restoreUrl(): boolean {
-    const stored = this.getLastTouch() || this.getFirstTouch();
-    return this.restorer?.restore(stored) ?? false;
-  }
-
   clear(): void {
     this.storage?.clearAll();
     this.decorator?.reset();
@@ -166,7 +129,7 @@ class Paramzilla implements ParamzillaAPI {
   }
 
   isActive(): boolean {
-    return this.config.enabled && this.initialized;
+    return this.initialized;
   }
 
   destroy(): void {

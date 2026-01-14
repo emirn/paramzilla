@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { ParamCapture } from '../src/capture';
 import { DEFAULT_CONFIG } from '../src/config';
 import { ParamzillaConfig } from '../src/types';
@@ -156,18 +156,6 @@ describe('ParamCapture', () => {
       const capture = new ParamCapture(config);
 
       expect(capture.hasParams()).toBe(false);
-    });
-  });
-
-  describe('updateConfig', () => {
-    it('updates config', () => {
-      const capture = new ParamCapture(config);
-      expect(capture.shouldCapture('ref')).toBe(false);
-
-      const newConfig = { ...config, params: ['ref'] };
-      capture.updateConfig(newConfig);
-
-      expect(capture.shouldCapture('ref')).toBe(true);
     });
   });
 });

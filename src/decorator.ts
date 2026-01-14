@@ -1,4 +1,5 @@
 import { ParamzillaConfig } from './types';
+import { EXCLUDE_SELECTOR } from './config';
 import { parseUrl, matchDomain, matchesAnyPattern } from './utils';
 
 export class LinkDecorator {
@@ -18,7 +19,6 @@ export class LinkDecorator {
    * @returns Number of links decorated
    */
   decorateAll(params: Record<string, string>): number {
-    if (!this.config.enableLinkDecoration) return 0;
     if (Object.keys(params).length === 0) return 0;
 
     const links = document.querySelectorAll<HTMLAnchorElement>('a[href]');
@@ -48,7 +48,7 @@ export class LinkDecorator {
     }
 
     // Check exclusion selector
-    if (this.config.excludeSelector && link.matches(this.config.excludeSelector)) {
+    if (link.matches(EXCLUDE_SELECTOR)) {
       this.log('Link excluded by selector:', href);
       return false;
     }
@@ -69,7 +69,7 @@ export class LinkDecorator {
       return false;
     }
 
-    // Add params to URL
+    // Add params to URL (skip if param already exists)
     const newHref = this.addParamsToUrl(url, params);
 
     if (newHref !== href) {
@@ -97,26 +97,13 @@ export class LinkDecorator {
   }
 
   /**
-   * Add params to URL respecting existingParamBehavior
+   * Add params to URL - skip if param already exists
    */
   private addParamsToUrl(url: URL, params: Record<string, string>): string {
-    const behavior = this.config.existingParamBehavior;
-
     Object.entries(params).forEach(([key, value]) => {
-      const existing = url.searchParams.get(key);
-
-      if (behavior === 'overwrite') {
+      // Only add if doesn't exist
+      if (url.searchParams.get(key) === null) {
         url.searchParams.set(key, value);
-      } else if (behavior === 'fill') {
-        // Fill if doesn't exist OR exists but empty
-        if (existing === null || existing === '') {
-          url.searchParams.set(key, value);
-        }
-      } else {
-        // 'skip' - only add if doesn't exist at all
-        if (existing === null) {
-          url.searchParams.set(key, value);
-        }
       }
     });
 
@@ -128,9 +115,5 @@ export class LinkDecorator {
    */
   reset(): void {
     this.decorated = new WeakSet();
-  }
-
-  updateConfig(config: ParamzillaConfig): void {
-    this.config = config;
   }
 }

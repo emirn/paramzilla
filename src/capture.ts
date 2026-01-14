@@ -65,8 +65,4 @@ export class ParamCapture {
     const allParams = getQueryParams(window.location.search);
     return Object.keys(allParams).some((k) => this.shouldCapture(k));
   }
-
-  updateConfig(config: ParamzillaConfig): void {
-    this.config = config;
-  }
 }

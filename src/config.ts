@@ -1,54 +1,41 @@
 import { ParamzillaConfig } from './types';
 
 export const DEFAULT_CONFIG: ParamzillaConfig = {
-  // Feature toggles - all ON by default
-  enabled: true,
   debug: false,
-  enableFirstTouch: true,
-  enableLastTouch: true,
-  enableLinkDecoration: true,
-  enableUrlRestoration: true,
-  enableDynamicObserver: true,
-  enableSPASupport: true,
 
-  // Parameters - empty by default, user MUST configure
+  // Parameters - captures all utm_* by default
   params: [],
-  paramPrefixes: ['utm_'], // Common default, captures all utm_* params
+  paramPrefixes: ['utm_'],
   excludeParams: [],
 
-  // Storage - localStorage only (GDPR-compliant, no cookie fallback)
+  // Storage - localStorage only (GDPR-compliant)
   storage: 'localStorage',
-  storagePrefix: 'pz_',
-  firstTouchTTL: 365, // 1 year
-  lastTouchTTL: 30, // 30 days
-  cookieDomain: '', // Current domain only
+  ttl: 30, // 30 days
+  cookieDomain: '',
 
   // Link decoration
-  allowedDomains: [], // Current domain only by default
+  allowedDomains: [], // Current domain only
   excludePatterns: [
     '*.exe',
     '*.msi',
     '*.dmg',
-    '*.pkg', // Executables
+    '*.pkg',
     '*.zip',
     '*.rar',
     '*.7z',
-    '*.tar*', // Archives
-    '*.pdf', // Documents (often external)
+    '*.tar*',
+    '*.pdf',
     'mailto:*',
     'tel:*',
-    'javascript:*', // Protocols
+    'javascript:*',
     '*logout*',
     '*signout*',
-    '*unsubscribe*', // Common exclusions
+    '*unsubscribe*',
   ],
-  excludeSelector: '[data-pz-ignore], .pz-ignore',
-  existingParamBehavior: 'skip',
 
-  // URL restoration
-  restoreOnlyIfEmpty: true,
-
-  // Callbacks
   onCapture: undefined,
-  onError: undefined,
 };
+
+// Hardcoded constants (no longer configurable)
+export const STORAGE_PREFIX = 'pz_';
+export const EXCLUDE_SELECTOR = '[data-pz-ignore], .pz-ignore';

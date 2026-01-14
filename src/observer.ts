@@ -26,15 +26,11 @@ export class DynamicObserver {
   }
 
   /**
-   * Start observing
+   * Start observing (both MutationObserver and History API)
    */
   start(): void {
-    if (this.config.enableDynamicObserver) {
-      this.startMutationObserver();
-    }
-    if (this.config.enableSPASupport) {
-      this.hookHistoryAPI();
-    }
+    this.startMutationObserver();
+    this.hookHistoryAPI();
   }
 
   /**
@@ -111,9 +107,5 @@ export class DynamicObserver {
       window.removeEventListener('popstate', this.popstateHandler);
       this.popstateHandler = null;
     }
-  }
-
-  updateConfig(config: ParamzillaConfig): void {
-    this.config = config;
   }
 }
