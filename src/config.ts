@@ -6,12 +6,11 @@ export const DEFAULT_CONFIG: ParamzillaConfig = {
   // Parameters - captures all utm_* by default (startsWith matching)
   params: ['utm_'],
 
-  // Storage - localStorage only (GDPR-compliant)
+  // Storage - localStorage only (GDPR-compliant, no cookies by default)
   storage: 'localStorage',
   ttl: 30, // 30 days
-  cookieDomain: '',
 
-  // Link decoration
+  // Link decoration (first domain also used as cookie domain when cookies enabled)
   allowedDomains: [], // Current domain only
   excludePatterns: [
     '*.exe',

@@ -14,10 +14,11 @@ export class Storage {
   private cookieDomain: string;
   private debugEnabled: boolean;
 
-  constructor(config: StorageConfig, prefix: string, cookieDomain: string, debug: boolean) {
+  constructor(config: StorageConfig, prefix: string, allowedDomains: string[], debug: boolean) {
     this.backends = this.parseStorageConfig(config);
     this.prefix = prefix;
-    this.cookieDomain = cookieDomain;
+    // Use first allowedDomain as cookie domain (for cross-subdomain cookies)
+    this.cookieDomain = allowedDomains[0] || '';
     this.debugEnabled = debug;
 
     this.log(`Initialized with backends: ${this.backends.join(' -> ')}`);

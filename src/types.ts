@@ -39,12 +39,10 @@ export interface ParamzillaConfig {
   /** TTL for stored data in days (0 = never expires) */
   ttl: number;
 
-  /** Cookie domain for cross-subdomain sharing (e.g., '.example.com') */
-  cookieDomain: string;
-
   /**
    * Allowed domains for link decoration (supports wildcards)
    * Empty array = current domain only
+   * First domain also used as cookie domain when storage includes 'cookie'
    * @example ['example.com', '*.example.com', 'partner.com']
    */
   allowedDomains: string[];

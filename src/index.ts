@@ -27,7 +27,7 @@ class Paramzilla implements ParamzillaAPI {
       this.storage = new Storage(
         this.config.storage,
         STORAGE_PREFIX,
-        this.config.cookieDomain,
+        this.config.allowedDomains,
         this.config.debug
       );
       this.paramCapture = new ParamCapture(this.config);

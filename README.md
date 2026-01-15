@@ -10,7 +10,7 @@ Add the script to your page:
 <script src="paramzilla.min.js"></script>
 ```
 
-That's it. Captures all `utm_*` parameters by default and stores them in localStorage.
+That's it. Captures all `utm_*` parameters by default and stores them in localStorage (GDPR-compliant, no cookies).
 
 ## Script Tag Configuration
 
@@ -31,9 +31,9 @@ Configure using data attributes:
 | Attribute | Description | Example |
 |-----------|-------------|---------|
 | data-params | Parameters to capture (startsWith matching) | "utm_,gclid,fbclid" |
-| data-storage | Storage backend | "localStorage" |
+| data-storage | Storage backend (default: localStorage) | "localStorage" |
 | data-merge-params | Enable attribution journey tracking | "true" |
-| data-allowed-domains | Domains for link decoration | "example.com,*.example.com" |
+| data-allowed-domains | Domains for link decoration + cookie domain | "example.com,*.example.com" |
 | data-exclude-patterns | URL patterns to skip | "*.pdf,*logout*" |
 | data-debug | Enable console logging | "true" |
 
@@ -85,12 +85,11 @@ Paramzilla.init({
 |--------|------|---------|-------------|
 | debug | boolean | false | Log to console |
 | params | string[] | ["utm_"] | Parameters to capture (startsWith matching) |
-| storage | string | "localStorage" | Storage backend |
+| storage | string | "localStorage" | Storage backend (no cookies by default) |
 | ttl | number | 30 | Data expiry in days |
 | mergeParams | boolean | false | Enable attribution journey tracking |
-| allowedDomains | string[] | [] | Domains for link decoration (empty = current domain) |
+| allowedDomains | string[] | [] | Domains for link decoration; first domain also used as cookie domain |
 | excludePatterns | string[] | (see below) | URL patterns to skip |
-| cookieDomain | string | "" | Cookie domain for cross-subdomain (when using cookies) |
 | onCapture | function | undefined | Callback when params are captured |
 
 ## Attribution Modes
@@ -140,15 +139,27 @@ Add `data-pz-ignore` attribute or `pz-ignore` class to skip decoration:
 
 ## Storage Options
 
+**Default: localStorage (GDPR-compliant, no cookies)**
+
 ```javascript
-// localStorage only (default, GDPR-friendly)
+// localStorage only (default - no cookies, GDPR-compliant)
 storage: "localStorage"
 
 // sessionStorage only (clears on browser close)
 storage: "sessionStorage"
+```
 
+**Opt-in cookie storage:**
+
+Cookies are only used when explicitly enabled:
+
+```javascript
 // Cookie with localStorage fallback
 storage: "cookie|localStorage"
+
+// Cross-subdomain cookies: set allowedDomains, first domain becomes cookie domain
+allowedDomains: [".example.com", "partner.com"]
+// → cookies will be set with domain=.example.com
 ```
 
 ## Callbacks
