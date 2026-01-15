@@ -4,22 +4,43 @@ URL parameter tracking library for marketing attribution. Captures UTM and custo
 
 ## Quick Start
 
-Add the script to your page:
+Add the script to your page - no configuration needed:
 
 ```html
 <script src="paramzilla.min.js"></script>
 ```
 
-That's it. Captures all `utm_*` parameters by default and stores them in localStorage (GDPR-compliant, no cookies).
+**That's it.** This automatically:
+- Captures UTM, Google Ads (gclid), Facebook (fbclid), Bing (msclkid), and ref params
+- Decorates links to your domain and all subdomains
+- Uses localStorage (GDPR-compliant, no cookies)
+
+## Zero-Config Defaults
+
+Out of the box, Paramzilla captures these tracking parameters:
+
+| Pattern | Captures |
+|---------|----------|
+| `utm_` | utm_source, utm_medium, utm_campaign, utm_term, utm_content |
+| `gclid` | Google Ads click ID |
+| `fbclid` | Facebook click ID |
+| `msclkid` | Microsoft/Bing Ads click ID |
+| `ref` | Common referral parameter |
+
+Links to your root domain and all subdomains are automatically decorated. For example, on `app.example.com`:
+- `example.com` ✓
+- `app.example.com` ✓
+- `other.example.com` ✓
+- `different.com` ✗
 
 ## Script Tag Configuration
 
-Configure using data attributes:
+Override defaults with data attributes:
 
 ```html
 <script
   src="paramzilla.min.js"
-  data-params="utm_,gclid,fbclid"
+  data-params="utm_,custom_"
   data-storage="localStorage"
   data-merge-params="true"
   data-debug="true"
@@ -28,35 +49,21 @@ Configure using data attributes:
 
 ### Available Attributes
 
-| Attribute | Description | Example |
+| Attribute | Description | Default |
 |-----------|-------------|---------|
-| data-params | Parameters to capture (startsWith matching) | "utm_,gclid,fbclid" |
-| data-storage | Storage backend (default: localStorage) | "localStorage" |
-| data-merge-params | Enable attribution journey tracking | "true" |
-| data-allowed-domains | Domains for link decoration + cookie domain | "example.com,*.example.com" |
-| data-exclude-patterns | URL patterns to skip | "*.pdf,*logout*" |
-| data-debug | Enable console logging | "true" |
-
-### How params work
-
-All params use `startsWith` matching:
-
-```
-data-params="utm_,gclid,fbclid"
-
-utm_    → captures utm_source, utm_medium, utm_campaign, etc.
-gclid   → captures gclid
-fbclid  → captures fbclid
-```
-
-Default is `['utm_']` which captures all UTM parameters.
+| data-params | Parameters to capture (startsWith matching) | "utm_,gclid,fbclid,msclkid,ref" |
+| data-storage | Storage backend | "localStorage" |
+| data-merge-params | Enable attribution journey tracking | "false" |
+| data-allowed-domains | Override auto-detected domains | (auto-detect) |
+| data-exclude-patterns | URL patterns to skip | (see below) |
+| data-debug | Enable console logging | "false" |
 
 ## JavaScript API
 
 ```javascript
 // Get all captured parameters
 Paramzilla.getParams()
-// Returns: { utm_source: "google", utm_medium: "cpc" }
+// Returns: { utm_source: "google", utm_medium: "cpc", gclid: "abc123" }
 
 // Get a specific parameter
 Paramzilla.getParam("utm_source")
@@ -72,7 +79,7 @@ Paramzilla.clear()
 import Paramzilla from 'paramzilla';
 
 Paramzilla.init({
-  params: ["utm_", "gclid", "fbclid"],
+  params: ["utm_", "gclid", "fbclid", "custom_"],
   storage: "localStorage",
   mergeParams: true,
   debug: true
@@ -84,11 +91,11 @@ Paramzilla.init({
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | debug | boolean | false | Log to console |
-| params | string[] | ["utm_"] | Parameters to capture (startsWith matching) |
+| params | string[] | ["utm_", "gclid", "fbclid", "msclkid", "ref"] | Parameters to capture (startsWith matching) |
 | storage | string | "localStorage" | Storage backend (no cookies by default) |
 | ttl | number | 30 | Data expiry in days |
 | mergeParams | boolean | false | Enable attribution journey tracking |
-| allowedDomains | string[] | [] | Domains for link decoration; first domain also used as cookie domain |
+| allowedDomains | string[] | [] | Domains for link decoration (empty = auto-detect) |
 | excludePatterns | string[] | (see below) | URL patterns to skip |
 | onCapture | function | undefined | Callback when params are captured |
 
@@ -119,18 +126,25 @@ Visit 4: ?utm_source=medium    → stored: "google|facebook|medium" (no duplicat
 
 Values are unique and maintain their original order.
 
+## Link Decoration
+
+Links are automatically decorated with stored params. The decorator:
+- Preserves existing query parameters (only adds missing ones)
+- Preserves hash fragments (`#section`)
+- Never overwrites existing param values
+
 ### Default Exclude Patterns
 
-Links matching these patterns are not decorated:
+Links matching these patterns are NOT decorated:
 - Executables: *.exe, *.msi, *.dmg, *.pkg
 - Archives: *.zip, *.rar, *.7z
 - Documents: *.pdf
 - Protocols: mailto:, tel:, javascript:
 - Pages: *logout*, *signout*, *unsubscribe*
 
-### Excluding Links
+### Excluding Specific Links
 
-Add `data-pz-ignore` attribute or `pz-ignore` class to skip decoration:
+Add `data-pz-ignore` attribute or `pz-ignore` class:
 
 ```html
 <a href="/logout" data-pz-ignore>Logout</a>

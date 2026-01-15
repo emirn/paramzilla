@@ -72,3 +72,33 @@ export function debounce<T extends (...args: unknown[]) => void>(fn: T, ms: numb
     timer = setTimeout(() => fn(...args), ms);
   }) as T;
 }
+
+/**
+ * Extract root domain from hostname
+ * @example getRootDomain('app.aicw.io') => 'aicw.io'
+ * @example getRootDomain('sub.example.co.uk') => 'example.co.uk'
+ */
+export function getRootDomain(hostname: string): string {
+  // Handle localhost and IP addresses
+  if (hostname === 'localhost' || /^\d+\.\d+\.\d+\.\d+$/.test(hostname)) {
+    return hostname;
+  }
+
+  const parts = hostname.split('.');
+
+  // Single part (e.g., 'localhost') - return as-is
+  if (parts.length <= 1) {
+    return hostname;
+  }
+
+  // Handle known 2-part TLDs (e.g., .co.uk, .com.au)
+  const knownDoubleTlds = ['co.uk', 'com.au', 'co.nz', 'com.br', 'co.jp', 'org.uk', 'net.au'];
+  const lastTwo = parts.slice(-2).join('.');
+
+  if (knownDoubleTlds.includes(lastTwo) && parts.length > 2) {
+    return parts.slice(-3).join('.');
+  }
+
+  // Standard: last 2 parts (e.g., aicw.io, example.com)
+  return parts.slice(-2).join('.');
+}

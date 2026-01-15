@@ -1,6 +1,6 @@
 import { ParamzillaConfig } from './types';
 import { EXCLUDE_SELECTOR } from './config';
-import { parseUrl, matchDomain, matchesAnyPattern } from './utils';
+import { parseUrl, matchDomain, matchesAnyPattern, getRootDomain } from './utils';
 
 export class LinkDecorator {
   private config: ParamzillaConfig;
@@ -88,9 +88,19 @@ export class LinkDecorator {
   private isDomainAllowed(hostname: string): boolean {
     const patterns = this.config.allowedDomains;
 
-    // If no patterns, allow only current domain
+    // If no patterns, allow current domain + all subdomains of root domain
     if (patterns.length === 0) {
-      return hostname === window.location.hostname;
+      const currentHost = window.location.hostname;
+      const rootDomain = getRootDomain(currentHost);
+      const targetLower = hostname.toLowerCase();
+      const rootLower = rootDomain.toLowerCase();
+
+      // Allow: exact match, root domain, or any subdomain of root
+      return (
+        targetLower === currentHost.toLowerCase() ||
+        targetLower === rootLower ||
+        targetLower.endsWith('.' + rootLower)
+      );
     }
 
     return patterns.some((p) => matchDomain(p, hostname));

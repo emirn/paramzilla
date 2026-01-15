@@ -94,18 +94,31 @@ describe('LinkDecorator', () => {
       });
     });
 
-    it('skips external domains by default', () => {
-      config.allowedDomains = []; // Empty = current domain only
+    it('allows subdomains of root domain by default', () => {
+      // window.location.hostname = 'example.com' (set in beforeEach)
+      config.allowedDomains = []; // Empty = auto-detect root domain
       decorator = new LinkDecorator(config);
 
-      const link = document.createElement('a');
-      link.href = 'https://other.com/page';
-      document.body.appendChild(link);
+      const testCases = [
+        { href: 'https://example.com/page', shouldDecorate: true },
+        { href: 'https://sub.example.com/page', shouldDecorate: true },
+        { href: 'https://app.example.com/page', shouldDecorate: true },
+        { href: 'https://other.com/page', shouldDecorate: false },
+        { href: 'https://notexample.com/page', shouldDecorate: false },
+      ];
 
-      expect(decorator.decorateLink(link, { utm_source: 'test' })).toBe(false);
+      testCases.forEach(({ href, shouldDecorate }) => {
+        decorator.reset();
+        const link = document.createElement('a');
+        link.href = href;
+        document.body.appendChild(link);
+
+        const result = decorator.decorateLink(link, { utm_source: 'test' });
+        expect(result).toBe(shouldDecorate);
+      });
     });
 
-    it('decorates allowed external domains', () => {
+    it('respects explicit allowedDomains over auto-detection', () => {
       config.allowedDomains = ['example.com', 'partner.com', '*.example.com'];
       decorator = new LinkDecorator(config);
 
