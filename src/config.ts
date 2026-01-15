@@ -3,8 +3,8 @@ import { ParamzillaConfig } from './types';
 export const DEFAULT_CONFIG: ParamzillaConfig = {
   debug: false,
 
-  // Parameters - captures all utm_* by default (startsWith matching)
-  params: ['utm_'],
+  // Parameters - common tracking params (startsWith matching)
+  params: ['utm_', 'gclid', 'fbclid', 'msclkid', 'ref'],
 
   // Storage - localStorage only (GDPR-compliant, no cookies by default)
   storage: 'localStorage',

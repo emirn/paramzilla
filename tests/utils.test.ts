@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { matchPattern, matchesAnyPattern, matchDomain, parseUrl, getQueryParams, debounce } from '../src/utils';
+import { matchPattern, matchesAnyPattern, matchDomain, parseUrl, getQueryParams, debounce, getRootDomain } from '../src/utils';
 
 describe('matchPattern', () => {
   it('matches exact strings', () => {
@@ -136,5 +136,37 @@ describe('debounce', () => {
 
     await new Promise((r) => setTimeout(r, 100));
     expect(callCount).toBe(1);
+  });
+});
+
+describe('getRootDomain', () => {
+  it('extracts root from subdomains', () => {
+    expect(getRootDomain('app.aicw.io')).toBe('aicw.io');
+    expect(getRootDomain('sub.example.com')).toBe('example.com');
+    expect(getRootDomain('deep.sub.example.com')).toBe('example.com');
+  });
+
+  it('returns root domain as-is', () => {
+    expect(getRootDomain('aicw.io')).toBe('aicw.io');
+    expect(getRootDomain('example.com')).toBe('example.com');
+  });
+
+  it('handles localhost', () => {
+    expect(getRootDomain('localhost')).toBe('localhost');
+  });
+
+  it('handles IP addresses', () => {
+    expect(getRootDomain('127.0.0.1')).toBe('127.0.0.1');
+    expect(getRootDomain('192.168.1.1')).toBe('192.168.1.1');
+  });
+
+  it('handles 2-part TLDs (co.uk, com.au)', () => {
+    expect(getRootDomain('sub.example.co.uk')).toBe('example.co.uk');
+    expect(getRootDomain('app.company.com.au')).toBe('company.com.au');
+    expect(getRootDomain('example.co.uk')).toBe('example.co.uk');
+  });
+
+  it('handles single-part hostnames', () => {
+    expect(getRootDomain('intranet')).toBe('intranet');
   });
 });
